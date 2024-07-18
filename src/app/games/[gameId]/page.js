@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { createClient } from "@/utils/supabase/client"
 
 export default function ChatRoom({ params }) {
@@ -9,6 +9,7 @@ export default function ChatRoom({ params }) {
     const [newMessage, setNewMessage] = useState('')
     const [game, setGame] = useState(null)
     const { gameId } = params
+    const messagesEndRef = useRef(null)
 
     useEffect(() => {
         fetchGame()
@@ -30,6 +31,10 @@ export default function ChatRoom({ params }) {
             supabase.removeChannel(channel)
         }
     }, [gameId])
+
+    useEffect(() => {
+        scrollToBottom()
+    }, [messages])
 
     async function fetchGame() {
         const { data, error } = await supabase
@@ -67,6 +72,7 @@ export default function ChatRoom({ params }) {
 
     async function sendMessage(e) {
         e.preventDefault()
+        if (!newMessage) return
         const { error } = await supabase
             .from('messages')
             .insert({ game_id: gameId, content: newMessage })
@@ -78,13 +84,17 @@ export default function ChatRoom({ params }) {
         }
     }
 
+    function scrollToBottom() {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+
     if (!game) {
         return <div>Loading...</div>
     }
 
     if (game.status === 'scheduled') {
         return (
-            <div className="bg-primary text-white p-5 min-h-screen flex flex-col items-center justify-center">
+            <div className="bg-primary text-white p-5 min-h-screen w-full flex flex-col items-center justify-center">
                 <h1 className="text-accent">{game.home_team} vs {game.away_team}</h1>
                 <p>This game hasn&apos;t started yet. Chat will be available when the game begins.</p>
             </div>
@@ -93,7 +103,7 @@ export default function ChatRoom({ params }) {
 
     if (game.status === 'finished') {
         return (
-            <div className="bg-primary text-white p-5 min-h-screen flex flex-col items-center justify-center">
+            <div className="bg-primary text-white p-5 min-h-screen w-full flex flex-col items-center justify-center">
                 <h1 className="text-accent">{game.home_team} vs {game.away_team}</h1>
                 <p>This game has ended. Chat is no longer available.</p>
                 <div className="w-full max-w-xl">
@@ -106,19 +116,21 @@ export default function ChatRoom({ params }) {
     }
 
     return (
-        <div className="bg-primary text-white p-5 min-h-screen w-full flex flex-col items-center justify-center">
-            <h1 className="text-accent">{game.home_team} vs {game.away_team}</h1>
-            <div className="w-full max-w-xl mb-4">
+        <div className="bg-primary text-white min-h-screen max-h-screen w-full flex flex-col">
+            <h1 className="text-accent text-center my-4">{game.home_team} vs {game.away_team}</h1>
+            <div className="flex-1 w-full max-w-xl mx-auto mb-4 overflow-y-scroll">
                 {messages.map(message => (
-                    <p key={message.id} className="bg-secondary p-2 rounded my-2">{message.content}</p>
+                    <p key={message.id} className="bg-dark p-2 rounded my-2">{message.content}</p>
                 ))}
+                <div ref={messagesEndRef} />
             </div>
-            <form onSubmit={sendMessage} className="flex gap-2 w-full max-w-xl">
+            <form onSubmit={sendMessage} className="w-full max-w mx-auto flex gap-2 p-4 bg-gray-800">
                 <input
                     type="text"
+                    placeholder='Type a message...'
                     value={newMessage}
                     onChange={e => setNewMessage(e.target.value)}
-                    className="flex-1 p-2 rounded"
+                    className="flex-1 p-2 rounded bg-gray-600 text-white"
                 />
                 <button type="submit" className="bg-accent text-primary p-2 rounded">Send</button>
             </form>
