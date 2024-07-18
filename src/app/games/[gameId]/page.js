@@ -78,8 +78,6 @@ export default function ChatRoom({ params }) {
         }
     }
 
-
-
     if (!game) {
         return <div>Loading...</div>
     }
@@ -88,7 +86,7 @@ export default function ChatRoom({ params }) {
         return (
             <div className="bg-primary text-white p-5 min-h-screen flex flex-col items-center justify-center">
                 <h1 className="text-accent">{game.home_team} vs {game.away_team}</h1>
-                <p>This game hasn't started yet. Chat will be available when the game begins.</p>
+                <p>This game hasn&apos;t started yet. Chat will be available when the game begins.</p>
             </div>
         )
     }
