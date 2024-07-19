@@ -182,7 +182,7 @@ export default function ChatRoom({ params }) {
 
     return (
         <div className="bg-primary text-white min-h-screen max-h-screen w-full flex flex-col">
-            <h1 className="text-accent text-center my-4">{game.home_team} vs {game.away_team}</h1>
+            <h1 className="text-accent text-center my-4">{game.home_team} {game.away_team ? "vs" : ""} {game.away_team}</h1>
             <div className="flex-1 w-full max-w-xl mx-auto mb-4 overflow-y-scroll">
                 {messages.map(message => (
                     <div key={message.id} className="flex items-center bg-dark p-2 rounded my-2">

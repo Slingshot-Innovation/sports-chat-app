@@ -66,7 +66,7 @@ export default function Home() {
     if (gameList.length === 0) {
       return <p className="text-gray-500">No {status} games at the moment.</p>
     }
-  
+
     return (
       <ul className="list-disc list-inside">
         {gameList.map(game => (
@@ -118,7 +118,7 @@ export default function Home() {
   }
 
   return (
-    <div className="p-5 bg-primary text-white min-h-screen w-full flex items-center justify-center relative">
+    <div className="p-5 bg-primary text-white h-screen overflow-y-scroll w-full flex justify-center relative">
       <button
         onClick={() => setIsModalOpen(true)}
         className="absolute top-4 right-4 bg-accent text-white p-2 rounded-full hover:bg-accent-dark"
@@ -127,7 +127,11 @@ export default function Home() {
       </button>
 
       <div className="w-full max-w-4xl">
-        <h1 className="text-accent text-4xl font-bold mb-8 text-center">Welcome to Game Talk</h1>
+        <h1 className="text-accent text-4xl font-bold mt-10 mb-8 text-center">Welcome to Game Talk</h1>
+
+        <div className="text-center">
+          <Link href="/games" className="text-accent text-lg font-medium hover:underline">View All Games</Link>
+        </div>
 
         <div className="mb-8">
           <h2 className="text-secondary text-2xl font-semibold mb-4">Live Games</h2>
@@ -142,10 +146,6 @@ export default function Home() {
         <div className="mb-8">
           <h2 className="text-secondary text-2xl font-semibold mb-4">Finished Games</h2>
           {renderGameList(games.finished, 'finished')}
-        </div>
-
-        <div className="text-center">
-          <Link href="/games" className="text-accent text-lg font-medium hover:underline">View All Games</Link>
         </div>
       </div>
 
