@@ -118,16 +118,16 @@ export default function Home() {
   }
 
   return (
-    <div className="p-5 bg-primary text-white h-screen overflow-y-scroll w-full flex justify-center relative">
+    <div className="p-5 bg-primary text-accent h-screen overflow-y-scroll w-full flex justify-center relative">
       <button
         onClick={() => setIsModalOpen(true)}
-        className="absolute top-4 right-4 bg-accent text-white p-2 rounded-full hover:bg-accent-dark"
+        className="absolute top-4 right-4 bg-secondary text-accent p-2 rounded-full hover:bg-dark"
       >
-        <PlusIcon className="h-6 w-6" />
+        <PlusIcon className="h-6 w-6 text-accent" />
       </button>
 
       <div className="w-full max-w-4xl">
-        <h1 className="text-accent text-4xl font-bold mt-10 mb-8 text-center">Welcome to Game Talk</h1>
+        <h1 className="text-secondary text-4xl font-bold mt-10 mb-8 text-center">Welcome to Game Talk</h1>
 
         <div className="text-center">
           <Link href="/games" className="text-accent text-lg font-medium hover:underline">View All Games</Link>

@@ -45,25 +45,25 @@ export default function ChatRoom({ params }) {
     async function getOrCreateUser() {
         let id = localStorage.getItem('userId')
         let name = localStorage.getItem('username')
-    
+
         if (!id || !name) {
             // If no user info in localStorage, create a new user
             id = uuidv4()
             name = generateUsername()
         }
-    
+
         // Check if the user exists in the database
         const { data: existingUser, error: fetchError } = await supabase
             .from('users')
             .select('*')
             .eq('id', id)
             .single()
-    
+
         if (fetchError && fetchError.code !== 'PGRST116') {
             console.error('Error fetching user:', fetchError)
             return
         }
-    
+
         if (!existingUser) {
             // If user doesn't exist in the database, create them
             const { data: newUser, error: insertError } = await supabase
@@ -71,12 +71,12 @@ export default function ChatRoom({ params }) {
                 .insert({ id, username: name })
                 .select()
                 .single()
-    
+
             if (insertError) {
                 console.error('Error creating user:', insertError)
                 return
             }
-    
+
             // Update localStorage with the new user info
             localStorage.setItem('userId', id)
             localStorage.setItem('username', name)
@@ -85,11 +85,11 @@ export default function ChatRoom({ params }) {
             localStorage.setItem('userId', existingUser.id)
             localStorage.setItem('username', existingUser.username)
         }
-    
+
         setUserId(id)
         setUsername(name)
     }
-    
+
     async function fetchGame() {
         const { data, error } = await supabase
             .from('games')
@@ -132,19 +132,19 @@ export default function ChatRoom({ params }) {
     async function sendMessage(e) {
         e.preventDefault()
         if (!newMessage) return
-        
+
         // Ensure user exists before sending message
         await getOrCreateUser()
-        
+
         if (!userId) {
             console.error('Failed to get or create user')
             return
         }
-    
+
         const { error } = await supabase
             .from('messages')
             .insert({ game_id: gameId, content: newMessage, user_id: userId })
-    
+
         if (error) {
             console.error('Error sending message:', error)
         } else {
@@ -186,9 +186,9 @@ export default function ChatRoom({ params }) {
                 <div className="w-full max-w-xl">
                     {messages.map(message => (
                         <div key={message.id} className="flex items-center bg-dark p-2 rounded my-2">
-                            <div 
-                                className="w-3 h-3 rounded-full mr-2" 
-                                style={{backgroundColor: generateColor(message.user_id)}}
+                            <div
+                                className="w-3 h-3 rounded-full mr-2"
+                                style={{ backgroundColor: generateColor(message.user_id) }}
                             ></div>
                             <span className="font-bold mr-2">{message.users.username}:</span>
                             <p>{message.content}</p>
@@ -205,11 +205,11 @@ export default function ChatRoom({ params }) {
             <div className="flex-1 w-full max-w-xl mx-auto mb-4 overflow-y-scroll">
                 {messages.map(message => (
                     <div key={message.id} className="flex items-center bg-dark p-2 rounded my-2">
-                        <div 
-                            className="w-3 h-3 rounded-full mr-2" 
-                            style={{backgroundColor: generateColor(message.user_id)}}
+                        <div
+                            className="w-3 h-3 rounded-full mr-2"
+                            style={{ backgroundColor: generateColor(message.user_id) }}
                         ></div>
-                        <span className="font-bold mr-2">{message.users.username}:</span>
+                        <span className="font-bold mr-2" style={{ color: generateColor(message.user_id) }}>{message.users.username}:</span>
                         <p>{message.content}</p>
                     </div>
                 ))}
