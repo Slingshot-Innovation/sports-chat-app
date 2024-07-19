@@ -19,6 +19,8 @@ export default function GameList() {
             name
           )
         `)
+        .order('status', { ascending: true }) // 'live' comes before 'scheduled'
+        .order('start_time', { ascending: true })
 
       if (error) {
         console.error('Error fetching games:', error)
@@ -49,6 +51,11 @@ export default function GameList() {
     )
   }
 
+  const formatDate = (dateString) => {
+    const options = { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }
+    return new Date(dateString).toLocaleDateString('en-US', options)
+  }
+
   return (
     <div className="bg-primary text-white h-screen w-full flex flex-col">
       <h1 className="text-accent text-3xl font-bold p-5 text-center">All Games</h1>
@@ -61,8 +68,15 @@ export default function GameList() {
                 {sportGames.map(game => (
                   <li key={game.id} className="p-4 bg-gray-800 rounded-md">
                     <Link href={`/games/${game.id}`} className="flex items-center justify-between">
-                      <div className="text-accent text-lg font-medium">
-                        {game.home_team} {game.away_team ? "vs" : ""} {game.away_team}
+                      <div>
+                        <div className="text-accent text-lg font-medium">
+                          {game.home_team} {game.away_team ? "vs" : ""} {game.away_team}
+                        </div>
+                        {game.status === 'scheduled' && (
+                          <div className="text-sm text-gray-400">
+                            {formatDate(game.start_time)}
+                          </div>
+                        )}
                       </div>
                       <div className={`text-sm font-semibold ${
                         game.status === 'live' ? 'text-green-500' : 

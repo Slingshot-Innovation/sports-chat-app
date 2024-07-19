@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from "@/utils/supabase/client"
+import { v4 as uuidv4 } from 'uuid'
+import { generateUsername } from '@/app/utils/usernameGenerator'
 
 export default function ChatRoom({ params }) {
     const supabase = createClient()
@@ -10,10 +12,14 @@ export default function ChatRoom({ params }) {
     const [game, setGame] = useState(null)
     const { gameId } = params
     const messagesEndRef = useRef(null)
+    const [userId, setUserId] = useState(null)
+    const [username, setUsername] = useState(null)
 
     useEffect(() => {
-        fetchGame()
-        fetchMessages()
+        getOrCreateUser().then(() => {
+            fetchGame()
+            fetchMessages()
+        })
 
         const channel = supabase
             .channel(`room:${gameId}`)
@@ -36,6 +42,43 @@ export default function ChatRoom({ params }) {
         scrollToBottom()
     }, [messages])
 
+    async function getOrCreateUser() {
+        let id = localStorage.getItem('userId')
+        let name = localStorage.getItem('username')
+    
+        if (!id || !name) {
+            id = uuidv4()
+            name = generateUsername()
+    
+            let userCreated = false
+            while (!userCreated) {
+                const { data, error } = await supabase
+                    .from('users')
+                    .insert({ id, username: name })
+                    .select()
+                    .single()
+    
+                if (error) {
+                    if (error.code === '23505') { // unique_violation
+                        console.log('Username already exists, generating a new one')
+                        name = generateUsername()
+                    } else {
+                        console.error('Error creating user:', error)
+                        return
+                    }
+                } else {
+                    userCreated = true
+                }
+            }
+    
+            localStorage.setItem('userId', id)
+            localStorage.setItem('username', name)
+        }
+    
+        setUserId(id)
+        setUsername(name)
+    }
+
     async function fetchGame() {
         const { data, error } = await supabase
             .from('games')
@@ -54,7 +97,12 @@ export default function ChatRoom({ params }) {
     async function fetchMessages() {
         const { data, error } = await supabase
             .from('messages')
-            .select('*')
+            .select(`
+                *,
+                users (
+                    username
+                )
+            `)
             .eq('game_id', gameId)
             .order('created_at', { ascending: true })
 
@@ -67,20 +115,21 @@ export default function ChatRoom({ params }) {
     }
 
     function handleNewMessage(payload) {
-        setMessages(prevMessages => [...prevMessages, payload.new])
+        fetchMessages() // Fetch all messages to ensure we have the latest data
     }
 
     async function sendMessage(e) {
         e.preventDefault()
-        if (!newMessage) return
+        if (!newMessage || !userId) return
         const { error } = await supabase
             .from('messages')
-            .insert({ game_id: gameId, content: newMessage })
+            .insert({ game_id: gameId, content: newMessage, user_id: userId })
 
         if (error) {
             console.error('Error sending message:', error)
         } else {
             setNewMessage('')
+            fetchMessages() // Fetch messages after sending to update the list
         }
     }
 
@@ -88,7 +137,16 @@ export default function ChatRoom({ params }) {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
 
-    if (!game) {
+    function generateColor(userId) {
+        let hash = 0;
+        for (let i = 0; i < userId.length; i++) {
+            hash = userId.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+        return "#" + "00000".substring(0, 6 - c.length) + c;
+    }
+
+    if (!game || !username) {
         return <div>Loading...</div>
     }
 
@@ -108,7 +166,14 @@ export default function ChatRoom({ params }) {
                 <p>This game has ended. Chat is no longer available.</p>
                 <div className="w-full max-w-xl">
                     {messages.map(message => (
-                        <p key={message.id} className="bg-secondary p-2 rounded my-2">{message.content}</p>
+                        <div key={message.id} className="flex items-center bg-secondary p-2 rounded my-2">
+                            <div 
+                                className="w-3 h-3 rounded-full mr-2" 
+                                style={{backgroundColor: generateColor(message.user_id)}}
+                            ></div>
+                            <span className="font-bold mr-2">{message.users.username}:</span>
+                            <p>{message.content}</p>
+                        </div>
                     ))}
                 </div>
             </div>
@@ -120,7 +185,14 @@ export default function ChatRoom({ params }) {
             <h1 className="text-accent text-center my-4">{game.home_team} vs {game.away_team}</h1>
             <div className="flex-1 w-full max-w-xl mx-auto mb-4 overflow-y-scroll">
                 {messages.map(message => (
-                    <p key={message.id} className="bg-dark p-2 rounded my-2">{message.content}</p>
+                    <div key={message.id} className="flex items-center bg-dark p-2 rounded my-2">
+                        <div 
+                            className="w-3 h-3 rounded-full mr-2" 
+                            style={{backgroundColor: generateColor(message.user_id)}}
+                        ></div>
+                        <span className="font-bold mr-2">{message.users.username}:</span>
+                        <p>{message.content}</p>
+                    </div>
                 ))}
                 <div ref={messagesEndRef} />
             </div>
