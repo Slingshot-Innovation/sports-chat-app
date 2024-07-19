@@ -47,38 +47,49 @@ export default function ChatRoom({ params }) {
         let name = localStorage.getItem('username')
     
         if (!id || !name) {
+            // If no user info in localStorage, create a new user
             id = uuidv4()
             name = generateUsername()
+        }
     
-            let userCreated = false
-            while (!userCreated) {
-                const { data, error } = await supabase
-                    .from('users')
-                    .insert({ id, username: name })
-                    .select()
-                    .single()
+        // Check if the user exists in the database
+        const { data: existingUser, error: fetchError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', id)
+            .single()
     
-                if (error) {
-                    if (error.code === '23505') { // unique_violation
-                        console.log('Username already exists, generating a new one')
-                        name = generateUsername()
-                    } else {
-                        console.error('Error creating user:', error)
-                        return
-                    }
-                } else {
-                    userCreated = true
-                }
+        if (fetchError && fetchError.code !== 'PGRST116') {
+            console.error('Error fetching user:', fetchError)
+            return
+        }
+    
+        if (!existingUser) {
+            // If user doesn't exist in the database, create them
+            const { data: newUser, error: insertError } = await supabase
+                .from('users')
+                .insert({ id, username: name })
+                .select()
+                .single()
+    
+            if (insertError) {
+                console.error('Error creating user:', insertError)
+                return
             }
     
+            // Update localStorage with the new user info
             localStorage.setItem('userId', id)
             localStorage.setItem('username', name)
+        } else {
+            // If user exists, update localStorage with the database info
+            localStorage.setItem('userId', existingUser.id)
+            localStorage.setItem('username', existingUser.username)
         }
     
         setUserId(id)
         setUsername(name)
     }
-
+    
     async function fetchGame() {
         const { data, error } = await supabase
             .from('games')
@@ -120,16 +131,24 @@ export default function ChatRoom({ params }) {
 
     async function sendMessage(e) {
         e.preventDefault()
-        if (!newMessage || !userId) return
+        if (!newMessage) return
+        
+        // Ensure user exists before sending message
+        await getOrCreateUser()
+        
+        if (!userId) {
+            console.error('Failed to get or create user')
+            return
+        }
+    
         const { error } = await supabase
             .from('messages')
             .insert({ game_id: gameId, content: newMessage, user_id: userId })
-
+    
         if (error) {
             console.error('Error sending message:', error)
         } else {
             setNewMessage('')
-            fetchMessages() // Fetch messages after sending to update the list
         }
     }
 
@@ -166,7 +185,7 @@ export default function ChatRoom({ params }) {
                 <p>This game has ended. Chat is no longer available.</p>
                 <div className="w-full max-w-xl">
                     {messages.map(message => (
-                        <div key={message.id} className="flex items-center bg-secondary p-2 rounded my-2">
+                        <div key={message.id} className="flex items-center bg-dark p-2 rounded my-2">
                             <div 
                                 className="w-3 h-3 rounded-full mr-2" 
                                 style={{backgroundColor: generateColor(message.user_id)}}
