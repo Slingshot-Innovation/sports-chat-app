@@ -49,6 +49,7 @@ async function fetchWithRetry(url, retries = 8) {
     }
 }
 
+// jank but u get the idea
 async function fetchScheduleData() {
     try {
         let today = new Date();
