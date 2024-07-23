@@ -10,6 +10,7 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [sports, setSports] = useState([])
   const [newGame, setNewGame] = useState({
+    event_name: '',
     home_team: '',
     away_team: '',
     sport_id: '',
@@ -72,7 +73,7 @@ export default function Home() {
         {gameList.map(game => (
           <li key={game.id} className="mb-1">
             <Link href={`/games/${game.id}`} className="text-accent hover:underline">
-              {game.home_team} {game.away_team ? "vs" : ""} {game.away_team} {game.sports?.name ? "-" : ""} {game.sports?.name || 'Unknown Sport'}
+              {game.event_name} {game.sports?.name ? "-" : ""} {game.sports?.name || 'Unknown Sport'}
             </Link>
           </li>
         ))}
@@ -94,6 +95,7 @@ export default function Home() {
     const { data, error } = await supabase
       .from('games')
       .insert([{
+        event_name: newGame.event_name,
         home_team: newGame.home_team,
         away_team: newGame.away_team,
         sport_id: parseInt(newGame.sport_id),
@@ -154,6 +156,15 @@ export default function Home() {
           <div className="bg-white p-8 rounded-lg w-96">
             <h2 className="text-2xl font-bold mb-4 text-gray-800">Create New Game</h2>
             <form onSubmit={handleSubmit}>
+              <input
+                type="text"
+                name="event_name"
+                placeholder="Event Name"
+                value={newGame.event_name}
+                onChange={handleInputChange}
+                className="w-full mb-2 p-2 border rounded text-gray-800"
+                required
+              />
               <input
                 type="text"
                 name="home_team"

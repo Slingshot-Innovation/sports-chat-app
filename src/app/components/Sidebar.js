@@ -11,6 +11,9 @@ export default function Sidebar() {
 
     useEffect(() => {
         fetchGames()
+        // Set up a timer to fetch games every minute
+        const timer = setInterval(fetchGames, 60000)
+        return () => clearInterval(timer) // Clean up on unmount
     }, [])
 
     async function fetchGames() {
@@ -24,6 +27,7 @@ export default function Sidebar() {
                 )
             `)
             .eq('status', 'live')
+            .order('start_time', { ascending: true })
 
         if (error) {
             console.error('Error fetching games:', error)
@@ -49,7 +53,7 @@ export default function Sidebar() {
     }
 
     return (
-        <aside className="w-64 p-5 bg-primary text-white">
+        <aside className="w-64 p-5 bg-primary text-white min-h-full">
             <Link href="/" className="text-accent mb-4 block">
                 <h2 className="text-accent text-xl font-bold mb-4">Game Talk</h2>
             </Link>
@@ -63,14 +67,14 @@ export default function Sidebar() {
                             className="text-secondary text-md font-semibold mb-1 cursor-pointer"
                             onClick={() => toggleSport(sport)}
                         >
-                            {sport}
+                            {sport} ({sportGames.length})
                         </h3>
                         {openSports[sport] && (
                             <ul className="list-none">
                                 {sportGames.map(game => (
                                     <li key={game.id} className="mb-[0.5]">
                                         <Link href={`/games/${game.id}`} className="text-sm text-accent underline">
-                                            {game.home_team} {game.away_team ? "vs" : ""} {game.away_team}
+                                            {game.event_name}
                                         </Link>
                                     </li>
                                 ))}

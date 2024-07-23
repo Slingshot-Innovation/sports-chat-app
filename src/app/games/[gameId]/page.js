@@ -14,6 +14,7 @@ export default function ChatRoom({ params }) {
     const messagesEndRef = useRef(null)
     const [userId, setUserId] = useState(null)
     const [username, setUsername] = useState(null)
+    const [timeLeft, setTimeLeft] = useState('')
 
     useEffect(() => {
         getOrCreateUser().then(() => {
@@ -37,6 +38,16 @@ export default function ChatRoom({ params }) {
             supabase.removeChannel(channel)
         }
     }, [gameId])
+
+    useEffect(() => {
+        if (game && game.end_time) {
+            updateTimeLeft() // Initial update
+            const intervalId = setInterval(() => {
+                updateTimeLeft()
+            }, 1000)
+            return () => clearInterval(intervalId)
+        }
+    }, [game])
 
     useEffect(() => {
         scrollToBottom()
@@ -103,6 +114,7 @@ export default function ChatRoom({ params }) {
         }
 
         setGame(data)
+        updateTimeLeft(data.end_time)
     }
 
     async function fetchMessages() {
@@ -165,6 +177,22 @@ export default function ChatRoom({ params }) {
         return "#" + "00000".substring(0, 6 - c.length) + c;
     }
 
+    function updateTimeLeft() {
+        if (!game || !game.end_time) return
+        const end = new Date(game.end_time)
+        const now = new Date()
+        const difference = end - now
+    
+        if (difference <= 0) {
+            setTimeLeft('Game Ended')
+        } else {
+            const hours = Math.floor(difference / (1000 * 60 * 60))
+            const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60))
+            const seconds = Math.floor((difference % (1000 * 60)) / 1000)
+            setTimeLeft(`${hours}h ${minutes}m ${seconds}s`)
+        }
+    }
+
     if (!game || !username) {
         return <div>Loading...</div>
     }
@@ -181,7 +209,7 @@ export default function ChatRoom({ params }) {
     if (game.status === 'finished') {
         return (
             <div className="bg-primary text-white p-5 min-h-screen w-full flex flex-col items-center justify-center">
-                <h1 className="text-accent">{game.home_team} vs {game.away_team}</h1>
+                <h1 className="text-accent">{game.event_name}</h1>
                 <p>This game has ended. Chat is no longer available.</p>
                 <div className="w-full max-w-xl">
                     {messages.map(message => (
@@ -201,7 +229,10 @@ export default function ChatRoom({ params }) {
 
     return (
         <div className="bg-primary text-white min-h-screen max-h-screen w-full flex flex-col">
-            <h1 className="text-accent text-center my-4">{game.home_team} {game.away_team ? "vs" : ""} {game.away_team}</h1>
+            <h1 className="text-accent text-center my-4">{game.event_name}</h1>
+            {game.end_time && (
+                <p className="text-center text-gray-400">{timeLeft}</p>
+            )}
             <div className="flex-1 w-full max-w-xl mx-auto mb-4 overflow-y-scroll">
                 {messages.map(message => (
                     <div key={message.id} className="flex items-center bg-dark p-2 rounded my-2">
